@@ -1,9 +1,11 @@
+
 import sys
 import time
 import json
 import pyotp
 import pyperclip
 import binascii
+import platform
 from PyQt5.QtWidgets import (
     QApplication, QSystemTrayIcon, QDialog, QPushButton, QLineEdit, QVBoxLayout, QWidget, QHBoxLayout, QMessageBox,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QScrollArea, QFrame, QSpacerItem, QSizePolicy
@@ -253,9 +255,34 @@ class MainApp(QDialog):
             x = screen.right() - size.width()
 
         if cursor_pos.y() + size.height() <= screen.bottom():
-            y = cursor_pos.y() + 10
+            y = cursor_pos.y() + 15
         else:
-            y = cursor_pos.y() - size.height() - 10
+            y = cursor_pos.y() - size.height() - 15
+
+        self.move(x, y)
+        
+        
+    def move_to_cursor(self):
+        icon_rect = self.tray_icon.geometry()
+        screen = QApplication.primaryScreen().availableGeometry()
+        size = self.geometry()
+
+        if platform.system() == "Darwin":  # macOS
+            x = icon_rect.center().x() - size.width() // 2
+            y = icon_rect.bottom() + 5
+        else:  # Windows
+            x = icon_rect.center().x() - size.width() // 2
+            y = icon_rect.top() - size.height() - 5
+
+        # Cross-border judgment
+        if x < screen.left():
+            x = screen.left()
+        elif x + size.width() > screen.right():
+            x = screen.right() - size.width()
+        if y < screen.top():
+            y = screen.top()
+        elif y + size.height() > screen.bottom():
+            y = screen.bottom() - size.height()
 
         self.move(x, y)
 
@@ -419,7 +446,7 @@ class MainApp(QDialog):
 
     def event(self, event):
         if event.type() == QEvent.WindowDeactivate:
-            if event != QSystemTrayIcon.Trigger and not any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
+            if not self.tray_icon.geometry().contains(QCursor.pos()) and not any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
                 self.hide()
                 self.table_widget.clearSelection()
         return super().event(event)
