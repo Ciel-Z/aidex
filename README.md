@@ -9,6 +9,8 @@ This is a simple TOTP client designed for local processing without any network r
 
 We hope this tool brings you convenience.
 
+## Software Screenshots
+![image](https://github.com/user-attachments/assets/04553a25-e479-47d1-96d9-15e8662a4285)
 
 
 ## packaging
