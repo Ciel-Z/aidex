@@ -9,20 +9,20 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QScrollArea, QFrame, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtCore import QTimer, Qt, pyqtSlot, QEvent
-from PyQt5.QtGui import QIcon, QCursor, QDrag
+from PyQt5.QtGui import QIcon, QCursor, QDrag, QPainter, QBrush, QColor
 from qt_material import apply_stylesheet
-import os
+from pathlib import Path
+
 
 if hasattr(sys, '_MEIPASS'):
-    base_path = sys._MEIPASS
+    base_path = Path(sys._MEIPASS)
 else:
-    base_path = os.path.abspath(".")
+    base_path = Path(__file__).resolve().parent
 
-icon_path = os.path.join(base_path, 'icon.png')
+icon_path = str(base_path / 'icon.png')
 
-# 获取用户文档目录
-from pathlib import Path
-CONFIG_FILE = os.path.join(str(Path.home()), "Documents", "totp_config.json")
+# document path
+CONFIG_FILE = str(Path.home() / "Documents" / "totp_config.json")
 
 
 def correct_secret_padding(secret):
@@ -89,7 +89,6 @@ class DraggableTableWidget(QTableWidget):
                     dropRow += 1
                 event.accept()
 
-                # 更新数据模型
                 self.window().update_data_model()
 
     def extractRow(self, row):
@@ -161,21 +160,21 @@ class MainApp(QDialog):
         self.setWindowTitle("aidex")
         self.setGeometry(300, 300, 450, 400)
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-
-        self.main_widget = QWidget(self)
-        self.layout = QVBoxLayout(self.main_widget)
+        self.setWindowOpacity(0.85)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-
+    
         self.button_layout = QHBoxLayout()
 
-        spacer = QSpacerItem(340, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
+        spacer = QSpacerItem(330, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
         self.button_layout.addItem(spacer)
 
         self.add_button = QPushButton("+", self)
         self.add_button.clicked.connect(lambda: self.show_config_dialog("", "", "", "", is_new=True))
-        self.add_button.setFixedWidth(45)
+        self.add_button.setFixedWidth(42)
         self.add_button.setFocusPolicy(Qt.NoFocus)
-        self.add_button.setStyleSheet("font-size: 16px;")
         self.button_layout.addWidget(self.add_button)
 
         spacer = QSpacerItem(7, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
@@ -183,9 +182,8 @@ class MainApp(QDialog):
 
         self.quit_button = QPushButton("×", self)
         self.quit_button.clicked.connect(lambda: quit())
-        self.quit_button.setFixedWidth(45)
+        self.quit_button.setFixedWidth(42)
         self.quit_button.setFocusPolicy(Qt.NoFocus)
-        self.quit_button.setStyleSheet("font-size: 16px;")
         self.button_layout.addWidget(self.quit_button)
 
         self.button_layout.addStretch()
@@ -195,25 +193,11 @@ class MainApp(QDialog):
         self.table_widget.setShowGrid(False)
         self.table_widget.setHorizontalHeaderLabels(["Name", "TOTP", "Time Left", "Action"])
         self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_widget.horizontalHeader().setSectionResizeMode(2, QHeaderView.Interactive)
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table_widget.verticalHeader().setDefaultSectionSize(40)
         self.table_widget.setFrameStyle(QFrame.NoFrame)
-
-        self.table_widget.setStyleSheet("""
-            QTableWidget {
-                border: 0px; font-size: 16px; border-radius: 15px; margin: 1px; 
-            }
-            QTableWidget::item {
-                border-bottom: 0.5px solid #B3B3B3; padding: 5px;
-            }
-            QHeaderView::section:first {
-                border-top-left-radius: 7px;
-            }
-            QHeaderView::section:last {
-                border-top-right-radius: 7px;
-            }
-        """)
 
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
@@ -232,17 +216,31 @@ class MainApp(QDialog):
         self.refresh_timer.start(1000)
 
         self.load_totp_configs()
-
-    def tray_icon_clicked(self, reason):
-        if reason == QSystemTrayIcon.Trigger:
-            if self.isHidden():
-                self.show()
-                self.raise_()
-                self.activateWindow()
-                self.move_to_cursor()
-            else:
-                self.hide()
-
+        
+        self.setStyleSheet("""
+            QPushButton {
+                font-size: 14px; border-radius: 12px;
+            }
+            QPushButton:hover {
+                border: 2px solid #00ffdf; color: #00ffdf;
+            }
+            QTableWidget {
+                border: 0px; font-size: 15px; border-radius: 15px; margin: 1px; 
+            }
+            QHeaderView::section {
+                font-size: 13px;
+            }
+            QTableWidget::item {
+                border-bottom: 0.5px solid #B3B3B3; padding: 5px;
+            }
+            QHeaderView::section:first {
+                border-top-left-radius: 7px;
+            }
+            QHeaderView::section:last {
+                border-top-right-radius: 7px;
+            }
+        """)
+        
     def move_to_cursor(self):
         cursor_pos = QCursor.pos()
         screen = QApplication.primaryScreen().availableGeometry()
@@ -289,7 +287,8 @@ class MainApp(QDialog):
             action_button = QPushButton("≡", self)
             action_button.clicked.connect(lambda: self.show_config_dialog(name, secret, prefix, suffix, row_position))
             action_button.setFixedWidth(30)
-            action_button.setFixedHeight(20)
+            action_button.setFixedHeight(25)
+            action_button.setStyleSheet("font-size: 13px; border-radius: 8px;")
 
             action_layout.addStretch()
             action_layout.addWidget(action_button)
@@ -330,7 +329,7 @@ class MainApp(QDialog):
 
     def copy_to_clipboard(self, row):
         self.copy_row = row
-        self.copy_timer.start(300)  # 300ms 防抖时间
+        self.copy_timer.start(300)
         
     def perform_copy(self):
         if self.copy_row is not None:
@@ -340,7 +339,7 @@ class MainApp(QDialog):
             pyperclip.copy(f"{config['prefix']}{code}{config['suffix']}")
             self.show_notification(f"Copied: {config['prefix']}{code}{config['suffix']}")
             self.copy_row = None
-            self.table_widget.clearSelection()  # 取消选择，防止重复触发双击事件
+            self.table_widget.clearSelection()  # clear select
 
     def show_notification(self, message):
         self.tray_icon.showMessage("aidex", message, self.icon, 2000)
@@ -386,7 +385,8 @@ class MainApp(QDialog):
         action_button = QPushButton("≡", self)
         action_button.clicked.connect(lambda _, row=row: self.show_config_dialog(name, secret, prefix, suffix, row))
         action_button.setFixedWidth(30)
-        action_button.setFixedHeight(20)
+        action_button.setFixedHeight(25)
+        action_button.setStyleSheet("font-size: 13px; border-radius: 8px;")
 
         action_layout.addStretch()
         action_layout.addWidget(action_button)
@@ -395,12 +395,33 @@ class MainApp(QDialog):
         action_widget.setLayout(action_layout)
 
         self.table_widget.setCellWidget(row, 3, action_widget)
-        
+    
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(QBrush(QColor(48, 54, 59)))
+        painter.setPen(Qt.NoPen)
+        rect = self.rect()
+        rect.setHeight(rect.height() - 1)
+        rect.setWidth(rect.width() - 1)
+        painter.drawRoundedRect(rect, 20, 20)
+
+    def tray_icon_clicked(self, reason):
+        if reason == QSystemTrayIcon.Trigger or reason == QSystemTrayIcon.DoubleClick:
+            if self.isHidden():
+                self.show()
+                self.raise_()
+                self.activateWindow()
+                self.move_to_cursor()
+            else:
+                self.hide()
+                self.table_widget.clearSelection()
 
     def event(self, event):
         if event.type() == QEvent.WindowDeactivate:
-            if not any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
+            if event != QSystemTrayIcon.Trigger and not any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
                 self.hide()
+                self.table_widget.clearSelection()
         return super().event(event)
 
 
@@ -413,6 +434,7 @@ class ConfigDialog(QDialog):
         self.is_delete = False
         self.setWindowTitle("TOTP Config")
         self.setGeometry(400, 400, 300, 200)
+        self.setWindowIcon(QIcon(icon_path))
 
         self.layout = QVBoxLayout(self)
 
