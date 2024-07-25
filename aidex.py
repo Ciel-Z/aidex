@@ -422,6 +422,16 @@ class MainApp(QDialog):
         action_widget.setLayout(action_layout)
 
         self.table_widget.setCellWidget(row, 3, action_widget)
+        
+    def show_action(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.move_to_cursor()
+        
+    def hide_action(self):
+        self.hide()
+        self.table_widget.clearSelection()
     
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -436,19 +446,14 @@ class MainApp(QDialog):
     def tray_icon_clicked(self, reason):
         if reason == QSystemTrayIcon.Trigger or reason == QSystemTrayIcon.DoubleClick:
             if self.isHidden():
-                self.show()
-                self.raise_()
-                self.activateWindow()
-                self.move_to_cursor()
+                self.show_action()
             else:
-                self.hide()
-                self.table_widget.clearSelection()
-
+                self.hide_action()
+ 
     def event(self, event):
         if event.type() == QEvent.WindowDeactivate:
             if not self.tray_icon.geometry().contains(QCursor.pos()) and not any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
-                self.hide()
-                self.table_widget.clearSelection()
+                self.hide_action()
         return super().event(event)
 
 
@@ -501,14 +506,17 @@ class ConfigDialog(QDialog):
             self.button_layout.addWidget(self.delete_button)
 
         self.layout.addLayout(self.button_layout)
+        
+    def get_data(self):
+        return (self.name_edit.text(), self.secret_edit.text(), self.prefix_edit.text(), self.suffix_edit.text(), self.is_delete)
 
     def save(self):
         secret = correct_secret_padding(self.secret_edit.text())
         if not self.validate_secret(secret):
             return
+        self.parent.show_action()
         self.accept()
         
-    
     def validate_secret(self, secret):
         secret = secret.strip().replace(' ', '').upper()
         if not secret:
@@ -521,15 +529,13 @@ class ConfigDialog(QDialog):
             self.parent.show_notification("The secret provided is not valid.")
             return False
 
-    def get_data(self):
-        return (self.name_edit.text(), self.secret_edit.text(), self.prefix_edit.text(), self.suffix_edit.text(), self.is_delete)
-
     @pyqtSlot()
     def delete(self):
         reply = QMessageBox.question(self, "Delete", "Are you sure you want to delete this config?",
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.is_delete = True
+            self.parent.show_action()
             self.accept()
 
 
