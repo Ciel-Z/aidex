@@ -4,14 +4,14 @@ block_cipher = None
 
 a = Analysis(
     ['aidex.py'],
-    pathex=['.'],  # 确保当前目录在路径中
+    pathex=['.'], 
     binaries=[],
-    datas=[('icon.png', '.')],
-    hiddenimports=['pyotp', 'pyperclip', 'qt_material', 'PyQt5'],
+    datas=[('icon.icns',  '.')],
+    hiddenimports=['pyotp', 'pyperclip', 'qt_material', 'PyQt5', 'AppKit'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PyQt6'],  # 确保排除 PyQt6
+    excludes=['PyQt6'], 
     noarchive=True,
     optimize=0,
 )
@@ -36,7 +36,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon.png',  # 确保这是一个字符串
+    icon='icon.icns',
 )
 
 coll = COLLECT(
@@ -52,7 +52,7 @@ coll = COLLECT(
 
 app = BUNDLE(
     coll,
-    name='aidex.app',  # 确保名称带有 .app 后缀
-    icon='icon.png',
+    name='aidex.app',  # .app 后缀
+    icon='icon.icns',
     bundle_identifier=None,
 )
