@@ -21,7 +21,7 @@ if hasattr(sys, '_MEIPASS'):
 else:
     base_path = Path(__file__).resolve().parent
 
-icon_path = str(base_path / 'icon.png')
+icon_path = str(base_path / 'icon.icns')
 
 # document path
 CONFIG_FILE = str(Path.home() / "Documents" / "totp_config.json")
@@ -445,6 +445,8 @@ class MainApp(QDialog):
 
     def tray_icon_clicked(self, reason):
         if reason == QSystemTrayIcon.Trigger or reason == QSystemTrayIcon.DoubleClick:
+            if any(isinstance(widget, ConfigDialog) and widget.isVisible() for widget in self.findChildren(QWidget)):
+                return
             if self.isHidden():
                 self.show_action()
             else:
@@ -467,6 +469,7 @@ class ConfigDialog(QDialog):
         self.setWindowTitle("TOTP Config")
         self.setGeometry(400, 400, 300, 200)
         self.setWindowIcon(QIcon(icon_path))
+        self.setWindowOpacity(0.9)
 
         self.layout = QVBoxLayout(self)
 
@@ -514,7 +517,6 @@ class ConfigDialog(QDialog):
         secret = correct_secret_padding(self.secret_edit.text())
         if not self.validate_secret(secret):
             return
-        self.parent.show_action()
         self.accept()
         
     def validate_secret(self, secret):
@@ -535,8 +537,8 @@ class ConfigDialog(QDialog):
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.is_delete = True
-            self.parent.show_action()
             self.accept()
+
 
 
 def main():
