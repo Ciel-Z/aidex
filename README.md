@@ -17,7 +17,6 @@ We hope this tool brings you convenience.
 ## packaging
 It can be modified arbitrarily. If you want to package it as an exe file, you can use the following command:
     
-windows: pyinstaller --windowed  --onefile --noconsole  --clean  --debug=all  --icon=icon.png  --add-data="icon.png;."  aidex.py
 windows: pyinstaller --noconsole  --onefile  --noupx --clean --debug=all  --icon=icon.png  --add-data="icon.png;."  aidex.py
   
 macos: pyinstaller aidex.spec
